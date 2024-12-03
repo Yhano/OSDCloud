@@ -18,6 +18,7 @@ Write-Warning "That didn't work because I haven't coded it yet!"
 # Start OSDCloud ZTI the RIGHT way
 Write-Host -ForegroundColor Cyan "Start OSDCloud with MY Parameters"
 Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage en-US -OSActivation Volume -Verbose -ErrorAction Stop
+Clear-Disk -Confirm:$false
 
 # Anything I want can go right here and I can change it at any time since it is in the Cloud!!!!!
 Write-Host -ForegroundColor Cyan "Starting OSDCloud PostAction ..."
