@@ -17,8 +17,7 @@ Write-Warning "That didn't work because I haven't coded it yet!"
 
 # Start OSDCloud ZTI the RIGHT way
 Write-Host -ForegroundColor Cyan "Start OSDCloud with MY Parameters"
-$osLanguage = (Get-WinSystemLocale).Name
-Start-OSDCloud -OSLanguage $osLanguage -OSBuild 24H2 -OSEdition Pro -ZTI
+Start-OSDCloud -OSLanguage en-US -OSBuild 24H2 -OSEdition Pro -ZTI
 
 # I need to ensure that the latest drivers will be installed based on the device model
 Write-Host -ForegroundColor Cyan "Installing the latest drivers"
