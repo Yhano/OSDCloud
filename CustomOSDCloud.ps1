@@ -14,13 +14,9 @@ Write-Host -ForegroundColor Cyan "Ejecting ISO"
 Write-Warning "That didn't work because I haven't coded it yet!"
 # Start-Sleep -Seconds 5
 
-# Set OSDCloud parameters to skip disk clearing confirmation
-$OSDCloud.SkipClearDisk = $false
-$OSDCloud.ClearDiskConfirm = $false
-
 # Start OSDCloud ZTI the RIGHT way
 Write-Host -ForegroundColor Cyan "Start OSDCloud with MY Parameters"
-Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage en-US -OSActivation Volume -ErrorAction Stop
+Invoke-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage en-US -OSActivation Volume -SkipClearDisk:$false -ClearDiskConfirm:$false -Verbose -ErrorAction Stop
 
 # Anything I want can go right here and I can change it at any time since it is in the Cloud!!!!!
 Write-Host -ForegroundColor Cyan "Starting OSDCloud PostAction ..."
