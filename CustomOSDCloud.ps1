@@ -26,7 +26,7 @@ Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage $osLangu
 
 # Set the computer name after deployment
 Write-Host -ForegroundColor Cyan "Setting computer name to $computerName"
-Rename-Computer -NewName $computerName -Force -Restart
+Rename-Computer -NewName $computerName -Force
 
 # Anything I want can go right here and I can change it at any time since it is in the Cloud!!!!!
 Write-Host -ForegroundColor Cyan "Starting OSDCloud PostAction ..."
