@@ -14,12 +14,19 @@ Write-Host -ForegroundColor Cyan "Ejecting ISO"
 Write-Warning "That didn't work because I haven't coded it yet!"
 # Start-Sleep -Seconds 5
 
+# Prompt the user for the OS language
+$osLanguage = Read-Host -Prompt "Please enter the OS language (e.g., en-US, de-DE)"
+
+# Prompt the user for the computer name
+$computerName = Read-Host -Prompt "Please enter the computer name"
+
 # Start OSDCloud ZTI the RIGHT way
 Write-Host -ForegroundColor Cyan "Start OSDCloud with MY Parameters"
-Start-OSDCloud -OSName 'Windows 11 23H2 x64' -OSEdition Pro -OSLanguage en-US -OSActivation Volume
+Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage $osLanguage -OSActivation Volume
 
-# Path to the Autopilot offline JSON file
-$autopilotJsonPath = ".\AutopilotConfigurationFile.json"  # Adjust this path if the file is in a different directory
+# Set the computer name after deployment
+Write-Host -ForegroundColor Cyan "Setting computer name to $computerName"
+Rename-Computer -NewName $computerName -Force -Restart
 
 # Anything I want can go right here and I can change it at any time since it is in the Cloud!!!!!
 Write-Host -ForegroundColor Cyan "Starting OSDCloud PostAction ..."
@@ -28,4 +35,3 @@ Write-Host -ForegroundColor Cyan "Starting OSDCloud PostAction ..."
 Write-Host -ForegroundColor Cyan "Restarting in 20 seconds!"
 Start-Sleep -Seconds 20
 wpeutil reboot
-
