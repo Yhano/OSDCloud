@@ -17,16 +17,9 @@ Write-Warning "That didn't work because I haven't coded it yet!"
 # Prompt the user for the OS language
 $osLanguage = Read-Host -Prompt "Please enter the OS language (e.g., en-US, de-DE)"
 
-# Prompt the user for the computer name
-$computerName = Read-Host -Prompt "Please enter the computer name"
-
 # Start OSDCloud ZTI the RIGHT way
 Write-Host -ForegroundColor Cyan "Start OSDCloud with MY Parameters"
 Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage $osLanguage -OSActivation Volume
-
-# Set the computer name after deployment
-Write-Host -ForegroundColor Cyan "Setting computer name to $computerName"
-Rename-Computer -NewName $computerName -Force
 
 # Anything I want can go right here and I can change it at any time since it is in the Cloud!!!!!
 Write-Host -ForegroundColor Cyan "Starting OSDCloud PostAction ..."
