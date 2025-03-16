@@ -17,9 +17,31 @@ Write-Warning "That didn't work because I haven't coded it yet!"
 # Prompt the user for the OS language
 $osLanguage = Read-Host -Prompt "Please enter the OS language (e.g., en-US, de-DE)"
 
+# Prompt the user for a computer name
+$computerName = Read-Host -Prompt "Please enter the computer name"
+
+# Validate name format (optional)
+if ($computerName -match "^[A-Z]{4}(M|W|L)(LAP|WKS|VDI)\d{6}$" ) {
+    Write-Host "Using computer name: $computerName"
+} else {
+    Write-Host "Invalid computer name format. Only letters, numbers, and dashes allowed." -ForegroundColor Red
+    Exit 1
+}
+
+# Path to Unattend.xml (WinPE environment)
+$unattendPath = "X:\Windows\Panther\Unattend.xml"
+
+# Inject the computer name into Unattend.xml
+(Get-Content $unattendPath) -replace "<ComputerName>.*?</ComputerName>", "<ComputerName>$computerName</ComputerName>" | Set-Content $unattendPath
+
+Write-Host "Computer name injected into Unattend.xml"
+
+# Store the name in a file for reference (optional)
+Set-Content -Path X:\ComputerName.txt -Value $computerName
+
 # Start OSDCloud ZTI the RIGHT way
 Write-Host -ForegroundColor Cyan "Start OSDCloud with MY Parameters"
-Start-OSDCloud -OSName 'Windows 11 23H2 x64' -OSEdition Pro -OSLanguage $osLanguage -OSActivation Volume
+Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage $osLanguage -OSActivation Volume
 
 # Anything I want can go right here and I can change it at any time since it is in the Cloud!!!!!
 Write-Host -ForegroundColor Cyan "Starting OSDCloud PostAction ..."
