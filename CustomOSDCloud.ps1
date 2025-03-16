@@ -1,70 +1,61 @@
-# This script is for custom OSD Cloud
-Write-Host -ForegroundColor Cyan "Starting Ingram Micro OSD Custom OSDCloud ..."
-Start-Sleep -Seconds 5
+Write-Host -ForegroundColor Cyan "Starting OSDCloud Custom Deployment..."
 
-# Make sure I have the latest OSD Content
-Write-Host -ForegroundColor Cyan "Updating the awesome OSD PowerShell Module"
-try {
-    Write-Host -ForegroundColor Cyan "Updating the awesome OSD PowerShell Module"
-    Install-Module OSD -Force
-} catch {
-    Write-Host -ForegroundColor Red "Failed to install OSD module. Exiting..."
-    Exit 1
-}
-
-try {
-    Write-Host -ForegroundColor Cyan "Importing the sweet OSD PowerShell Module"
-    Import-Module OSD -Force
-} catch {
-    Write-Host -ForegroundColor Red "Failed to import OSD module. Exiting..."
-    Exit 1
-}
-
-# TODO: Spend the time to write a function to do this and put it here
-Write-Host -ForegroundColor Cyan "Ejecting ISO"
-Write-Warning "That didn't work because I haven't coded it yet!"
-
-# Start-Sleep -Seconds 5
-Write-Host -ForegroundColor Red "Invalid computer name format. Only letters, numbers, and dashes allowed."
+# Ensure the OSD Module is up to date
+Write-Host -ForegroundColor Cyan "Updating OSD Module..."
+Install-Module OSD -Force -ErrorAction SilentlyContinue
+Import-Module OSD -Force -ErrorAction SilentlyContinue
 
 # Prompt the user for the OS language
 $osLanguage = Read-Host -Prompt "Please enter the OS language (e.g., en-US, de-DE)"
 
-# Prompt the user for a computer name
-$computerName = Read-Host -Prompt "Please enter the computer name"
+# Prompt for Computer Name
+$computerName = Read-Host -Prompt "Enter the new computer name"
 
-# Validate name format (optional)
-if ($computerName -match "^[A-Z]{4}(M|W|L)(LAP|WKS|VDI)\d{6}$" ) {
+# Validate Naming Format
+if ($computerName -match "^[A-Z]{4}(M|W|L)(LAP|WKS|VDI)\d{6}$") {
     Write-Host "Using computer name: $computerName"
 } else {
-    Write-Host "Invalid computer name format. Only letters, numbers, and dashes allowed." -ForegroundColor Red
+    Write-Host "Invalid format! Use 4 letters, (M/W/L), (LAP/WKS/VDI), and 6 digits." -ForegroundColor Red
     Exit 1
 }
 
-# Path to Unattend.xml (WinPE environment)
+# Define Unattend.xml Path in WinPE
 $unattendPath = "X:\Windows\Panther\Unattend.xml"
 
-# Inject the computer name into Unattend.xml
-(Get-Content $unattendPath) -replace "<ComputerName>.*?</ComputerName>", "<ComputerName>$computerName</ComputerName>" | Set-Content $unattendPath
+# Ensure Windows\Panther Directory Exists
+if (!(Test-Path "X:\Windows\Panther")) {
+    Write-Host "Creating Panther directory..."
+    New-Item -Path "X:\Windows\Panther" -ItemType Directory -Force
+}
 
-Write-Host "Computer name injected into Unattend.xml"
+# Create a Custom Unattend.xml
+$unattendXML = @"
+<?xml version="1.0" encoding="utf-8"?>
+<unattend xmlns="urn:schemas-microsoft-com:unattend">
+    <settings pass="specialize">
+        <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+            <ComputerName>$computerName</ComputerName>
+        </component>
+    </settings>
+</unattend>
+"@
 
-# Store the name in a file for reference (optional)
-Set-Content -Path X:\ComputerName.txt -Value $computerName
+# Save Unattend.xml in Panther Directory
+$unattendXML | Out-File -Encoding utf8 -FilePath $unattendPath
+Write-Host "Unattend.xml created successfully!"
+
+# Store Computer Name for Future Use (Optional)
+Set-Content -Path "X:\ComputerName.txt" -Value $computerName
+
+# Start OSDCloud ZTI the RIGHT way
+Write-Host -ForegroundColor Cyan "Start OSDCloud with MY Parameters"
+Start-OSDCloud -OSName 'Windows 11 23H2 x64' -OSEdition Pro -OSLanguage $osLanguage -OSActivation Volume
+
+# Restart After OS Deployment
+Write-Host "Restarting system..."
+Start-Sleep -Seconds 10
 if (Get-Command wpeutil -ErrorAction SilentlyContinue) {
     wpeutil reboot
 } else {
-    Write-Host -ForegroundColor Red "wpeutil command not found. Exiting..."
-    Exit 1
+    Write-Host "wpeutil command not found. Please ensure you are running in the Windows PE environment." -ForegroundColor Red
 }
-# Start OSDCloud ZTI the RIGHT way
-Write-Host -ForegroundColor Cyan "Start OSDCloud with MY Parameters"
-Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage $osLanguage -OSActivation Volume
-
-# Anything I want can go right here and I can change it at any time since it is in the Cloud!!!!!
-Write-Host -ForegroundColor Cyan "Starting OSDCloud PostAction ..."
-
-# Restart from WinPE
-Write-Host -ForegroundColor Cyan "Restarting in 20 seconds!"
-Start-Sleep -Seconds 20
-wpeutil reboot
