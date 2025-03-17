@@ -26,9 +26,6 @@ if ($NewComputerName -match "^[A-Z]{4}(M|W|L)(LAP|WKS|VDI)\d{6}$") {
      Exit 1
 }
 
-# Reboot to apply changes
-shutdown -r -t 10
-
 # Restart After OS Deployment
 Write-Host "Restarting system..."
 Start-Sleep -Seconds 10
