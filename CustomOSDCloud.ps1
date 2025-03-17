@@ -1,6 +1,6 @@
 Write-Host -ForegroundColor Cyan "Starting OSDCloud Custom Deployment..."
 
-# Ensure the OSD Module is up to date
+# Ensure OSD Module is Up-to-Date
 Write-Host -ForegroundColor Cyan "Updating OSD Module..."
 Install-Module OSD -Force -ErrorAction SilentlyContinue
 Import-Module OSD -Force -ErrorAction SilentlyContinue
@@ -19,43 +19,21 @@ if ($computerName -match "^[A-Z]{4}(M|W|L)(LAP|WKS|VDI)\d{6}$") {
     Exit 1
 }
 
-# Define Unattend.xml Path in WinPE
-$unattendPath = "X:\Windows\Panther\Unattend.xml"
-
-# Ensure Windows\Panther Directory Exists
-if (!(Test-Path "X:\Windows\Panther")) {
-    Write-Host "Creating Panther directory..."
-    New-Item -Path "X:\Windows\Panther" -ItemType Directory -Force
+# Store Computer Name in Registry (Used for First Boot)
+Write-Host "Storing computer name for first boot..."
+try {
+    reg add "HKLM\SOFTWARE\OSDCloud" /v "ComputerName" /t REG_SZ /d $computerName /f
+    Write-Host "Computer name stored successfully."
+} catch {
+    Write-Host "Failed to store computer name in registry: $_" -ForegroundColor Red
+    Exit 1
 }
 
-# Create a Custom Unattend.xml
-$unattendXML = @"
-<?xml version="1.0" encoding="utf-8"?>
-<unattend xmlns="urn:schemas-microsoft-com:unattend">
-    <settings pass="specialize">
-        <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
-            <ComputerName>$computerName</ComputerName>
-        </component>
-    </settings>
-</unattend>
-"@
-
-# Save Unattend.xml in Panther Directory
-$unattendXML | Out-File -Encoding utf8 -FilePath $unattendPath
-Write-Host "Unattend.xml created successfully!"
-
-# Store Computer Name for Future Use (Optional)
-Set-Content -Path "X:\ComputerName.txt" -Value $computerName
-
-# Start OSDCloud ZTI the RIGHT way
-Write-Host -ForegroundColor Cyan "Start OSDCloud with MY Parameters"
-Start-OSDCloud -OSName 'Windows 11 23H2 x64' -OSEdition Pro -OSLanguage $osLanguage -OSActivation Volume
+# Start OSDCloud Deployment with Custom OS Settings
+Write-Host "Starting OSDCloud deployment..."
+Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage $osLanguage -OSActivation Volume
 
 # Restart After OS Deployment
 Write-Host "Restarting system..."
 Start-Sleep -Seconds 10
-if (Get-Command wpeutil -ErrorAction SilentlyContinue) {
-    wpeutil reboot
-} else {
-    Write-Host "wpeutil command not found. Please ensure you are running in the Windows PE environment." -ForegroundColor Red
-}
+wpeutil reboot
