@@ -27,56 +27,6 @@ if ($NewComputerName -match "^[A-Z]{4}(M|W|L)(LAP|WKS|VDI)\d{6}$") {
     Exit 1
 }
 
-# Define SetupComplete path
-$SetupCompletePath = "C:\Windows\Setup\Scripts\SetupComplete.cmd"
-
-Write-Host "Modifying SetupComplete.cmd..." -ForegroundColor Green
-
-# Ensure the Scripts folder exists
-if (!(Test-Path "C:\Windows\Setup\Scripts")) {
-    Write-Host "Scripts folder does not exist. Creating it..."
-    New-Item -Path "C:\Windows\Setup\Scripts" -ItemType Directory -Force
-}
-
-# Check if SetupComplete.cmd exists
-if (Test-Path $SetupCompletePath) {
-    Write-Host "SetupComplete.cmd found. Backing up..."
-    Copy-Item -Path $SetupCompletePath -Destination "$SetupCompletePath.bak" -Force
-} else {
-    Write-Host "[INFO] SetupComplete.cmd not found. Creating a new one..."
-    New-Item -Path $SetupCompletePath -ItemType File -Force
-}
-
-# Show existing content (before modification)
-Write-Host "`[DEBUG] Current SetupComplete.cmd Content:"
-Get-Content -Path $SetupCompletePath -Raw
-
-# Append custom rename logic
-$CustomRenameScript = @"
-:: Custom Rename Computer Script
-echo Running Custom Rename
-
-if exist C:\Windows\Setup\Scripts\NewComputerName.txt (
-    set /p NEWNAME=<C:\Windows\Setup\Scripts\NewComputerName.txt
-    echo Found NewComputerName.txt, setting computer name: %NEWNAME%
-    echo Renaming %COMPUTERNAME% to %NEWNAME%
-    wmic computersystem where name='%COMPUTERNAME%' call rename name='%NEWNAME%'
-    del C:\Windows\Setup\Scripts\NewComputerName.txt
-    shutdown /r /t 10
-) else (
-    echo No NewComputerName.txt found. Skipping rename.
-)
-"@
-
-# Append the script to SetupComplete.cmd
-Add-Content -Path $SetupCompletePath -Value "`r`n$($CustomRenameScript)"
-
-# Show updated content (after modification)
-Write-Host "Updated SetupComplete.cmd Content:"
-Get-Content -Path $SetupCompletePath
-
-Write-Host "SetupComplete.cmd modification completed."
-
 # Pause before restart for verification
 ##Write-Host "Waiting for 10 seconds before rebooting..."
 ##Start-Sleep -Seconds 10
