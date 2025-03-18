@@ -54,35 +54,14 @@ Start-Sleep -Seconds 30
 $RenameCmd = "`r`n%windir%\system32\WindowsPowerShell\v1.0\powershell.exe -executionpolicy bypass -file C:\Windows\Setup\Scripts\Rename.ps1"
 $SetupCompleteCmdPath = "C:\Windows\Setup\Scripts\SetupComplete.cmd"
 
-# Ensure SetupComplete.cmd exists and contains @echo off
+# Ensure SetupComplete.cmd is always updated
 if (Test-Path -Path $SetupCompleteCmdPath) {
-    $content = Get-Content -Path $SetupCompleteCmdPath -Raw
+    Write-Host "SetupComplete.cmd already exists. Overwriting..." -ForegroundColor Yellow
+    Remove-Item -Path $SetupCompleteCmdPath -Force
+}
 
-    # Ensure @echo off is at the top
-    if ($content -notmatch "@echo off") {
-        $content = "@echo off`r`n" + $content
-    }
-
-    if ($content -notmatch "Rename.ps1") {
-        # Ensure Rename.ps1 runs before exit
-        if ($content -match "exit") {
-            $content = $content -replace "exit", "$RenameCmd`r`nexit"
-        } else {
-            $content += "`r`n$RenameCmd`r`nexit"
-        }
-
-        try {
-            Set-Content -Path $SetupCompleteCmdPath -Value $content -Encoding ASCII
-            Write-Host "Updated SetupComplete.cmd to execute Rename.ps1"
-        } catch {
-            Write-Host "Failed to update SetupComplete.cmd: $_" -ForegroundColor Red
-        }
-    } else {
-        Write-Host "Rename.ps1 execution already exists in SetupComplete.cmd, no changes made."
-    }
-} else {
-    # If SetupComplete.cmd doesn't exist, create it with @echo off
-    @"
+# Create a fresh SetupComplete.cmd
+$SetupCompleteContent = @"
 @echo off
 echo [%DATE% %TIME%] SetupComplete.cmd started >> C:\Windows\Setup\Scripts\SetupComplete.log
 %windir%\system32\WindowsPowerShell\v1.0\powershell.exe -executionpolicy bypass -file C:\Windows\Setup\Scripts\SetupComplete.ps1 >> C:\Windows\Setup\Scripts\SetupComplete.log 2>&1
@@ -94,10 +73,11 @@ echo [%DATE% %TIME%] Waiting before executing Rename.ps1 >> C:\Windows\Setup\Scr
 %windir%\system32\WindowsPowerShell\v1.0\powershell.exe -executionpolicy bypass -file C:\Windows\Setup\Scripts\Rename.ps1 >> C:\Windows\Setup\Scripts\SetupComplete.log 2>&1
 echo [%DATE% %TIME%] Rename.ps1 executed >> C:\Windows\Setup\Scripts\SetupComplete.log
 exit
-"@ | Set-Content -Path $SetupCompleteCmdPath -Encoding ASCII
+"@
 
-    Write-Host "Created new SetupComplete.cmd successfully with @echo off." | Tee-Object -FilePath C:\Windows\Setup\Scripts\OSDCloud.log -Append
-}
+Set-Content -Path $SetupCompleteCmdPath -Value $SetupCompleteContent -Encoding ASCII -Force
+
+Write-Host "SetupComplete.cmd successfully created!" -ForegroundColor Green
 
 Start-Sleep -Seconds 60
 
