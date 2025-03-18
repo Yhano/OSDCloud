@@ -84,12 +84,19 @@ if (Test-Path -Path $SetupCompleteCmdPath) {
     # If SetupComplete.cmd doesn't exist, create it with @echo off
     @"
 @echo off
-%windir%\system32\WindowsPowerShell\v1.0\powershell.exe -executionpolicy bypass -file C:\Windows\Setup\Scripts\SetupComplete.ps1
-%windir%\system32\WindowsPowerShell\v1.0\powershell.exe -executionpolicy bypass -file C:\Windows\Setup\Scripts\Rename.ps1
+echo [%DATE% %TIME%] SetupComplete.cmd started >> C:\Windows\Setup\Scripts\SetupComplete.log
+%windir%\system32\WindowsPowerShell\v1.0\powershell.exe -executionpolicy bypass -file C:\Windows\Setup\Scripts\SetupComplete.ps1 >> C:\Windows\Setup\Scripts\SetupComplete.log 2>&1
+echo [%DATE% %TIME%] SetupComplete.ps1 executed >> C:\Windows\Setup\Scripts\SetupComplete.log
+
+timeout /t 10 /nobreak
+echo [%DATE% %TIME%] Waiting before executing Rename.ps1 >> C:\Windows\Setup\Scripts\SetupComplete.log
+
+%windir%\system32\WindowsPowerShell\v1.0\powershell.exe -executionpolicy bypass -file C:\Windows\Setup\Scripts\Rename.ps1 >> C:\Windows\Setup\Scripts\SetupComplete.log 2>&1
+echo [%DATE% %TIME%] Rename.ps1 executed >> C:\Windows\Setup\Scripts\SetupComplete.log
 exit
 "@ | Set-Content -Path $SetupCompleteCmdPath -Encoding ASCII
 
-    Write-Host "Created new SetupComplete.cmd successfully with @echo off."
+    Write-Host "Created new SetupComplete.cmd successfully with @echo off." | Tee-Object -FilePath C:\Windows\Setup\Scripts\OSDCloud.log -Append
 }
 
 Start-Sleep -Seconds 60
