@@ -14,7 +14,7 @@ Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage $osLangu
 
 # Wait for OSDCloud to finish
 Write-Host "Waiting for OSDCloud deployment to complete..."
-Start-Sleep -Seconds 10  # Adjust if necessary
+Start-Sleep -Seconds 10
 
 $NewComputerName = Read-Host "Enter new computer name"
 
@@ -41,15 +41,15 @@ if (!(Test-Path "C:\Windows\Setup\Scripts\")) {
 # Copy Rename.ps1 from WinPE (X:\) to the Windows drive (C:\)
 if (Test-Path $RenameScriptSource) {
     Copy-Item -Path $RenameScriptSource -Destination $RenameScriptDestination -Force
-    Write-Host "Copied Rename.ps1 to C:\Windows\Setup\Scripts\""
+    Write-Host "Copied Rename.ps1 to C:\Windows\Setup\Scripts\"
 } else {
-    Write-Host "Rename.ps1 not found in X:\OSDCloud\Config\Scripts\SetupComplete\""
+    Write-Host "Rename.ps1 not found in X:\OSDCloud\Config\Scripts\SetupComplete\"
 }
 
 Start-Sleep -Seconds 30
 
 # Ensure $RenameCmd and $SetupCompleteCmdPath are initialized
-$RenameCmd = "powershell.exe -File C:\Windows\Setup\Scripts\Rename.ps1"
+$RenameCmd = "`r`n%windir%\system32\WindowsPowerShell\v1.0\powershell.exe -executionpolicy bypass -file C:\Windows\Setup\Scripts\Rename.ps1"
 $SetupCompleteCmdPath = "C:\Windows\Setup\Scripts\SetupComplete.cmd"
 
 # Check if SetupComplete.cmd exists
@@ -61,12 +61,12 @@ if (Test-Path -Path $SetupCompleteCmdPath) {
         if ($content -match "exit") {
             $content = $content -replace "exit", "$RenameCmd`r`nexit"
         } else {
-            $content += "`r`n$RenameCmd"
+            $content += "`r`n$RenameCmd`r`nexit"
         }
 
         # Write back the updated content
         try {
-            Set-Content -Path $SetupCompleteCmdPath -Value $content -Encoding UTF8
+            Set-Content -Path $SetupCompleteCmdPath -Value $content -Encoding ASCII
             Write-Host "Updated SetupComplete.cmd to execute Rename.ps1"
         } catch {
             Write-Host "Failed to update SetupComplete.cmd: $_" -ForegroundColor Red
@@ -75,7 +75,15 @@ if (Test-Path -Path $SetupCompleteCmdPath) {
         Write-Host "Rename.ps1 execution already exists in SetupComplete.cmd, no changes made."
     }
 } else {
-    Write-Host "SetupComplete.cmd not found, skipping modification."
+    # If SetupComplete.cmd doesn't exist, create it
+    @"
+@echo off
+%windir%\system32\WindowsPowerShell\v1.0\powershell.exe -executionpolicy bypass -file C:\Windows\Setup\Scripts\SetupComplete.ps1
+%windir%\system32\WindowsPowerShell\v1.0\powershell.exe -executionpolicy bypass -file C:\Windows\Setup\Scripts\Rename.ps1
+exit
+"@ | Set-Content -Path $SetupCompleteCmdPath -Encoding ASCII
+
+    Write-Host "Created new SetupComplete.cmd successfully."
 }
 
 Start-Sleep -Seconds 60
