@@ -27,7 +27,7 @@ if ($NewComputerName -match "^[A-Z]{4}(M|W|L)(LAP|WKS|VDI)\d{6}$") {
     Exit 1
 }
 
-Start-Sleep -Seconds 10
+Start-Sleep -Seconds 30
 
 # Define source and destination paths
 $RenameScriptSource = "X:\OSDCloud\Config\Scripts\SetupComplete\Rename.ps1"
@@ -38,6 +38,8 @@ if (!(Test-Path "C:\Windows\Setup\Scripts\")) {
     New-Item -ItemType Directory -Path "C:\Windows\Setup\Scripts\" -Force
 }
 
+Start-Sleep -Seconds 30
+
 # Copy Rename.ps1 from WinPE (X:\) to the Windows drive (C:\)
 if (Test-Path $RenameScriptSource) {
     Copy-Item -Path $RenameScriptSource -Destination $RenameScriptDestination -Force
@@ -45,6 +47,8 @@ if (Test-Path $RenameScriptSource) {
 } else {
     Write-Host "Rename.ps1 not found in X:\OSDCloud\Config\Scripts\SetupComplete\"
 }
+
+Start-Sleep -Seconds 30
 
 $SetupCompleteCmdPath = "C:\Windows\Setup\Scripts\SetupComplete.cmd"
 $RenameCmd = "`r`n%windir%\system32\windowspowershell\v1.0\powershell.exe -executionpolicy bypass -file C:\Windows\Setup\Scripts\Rename.ps1"
@@ -72,6 +76,9 @@ if (Test-Path $SetupCompleteCmdPath) {
 } else {
     Write-Host "SetupComplete.cmd not found, skipping modification."
 }
+
+Start-Sleep -Seconds 60
+
 
 # Pause before restart for verification
 ##Write-Host "Waiting for 10 seconds before rebooting..."
