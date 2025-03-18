@@ -49,7 +49,7 @@ if (Test-Path $SetupCompletePath) {
 
 # Show existing content (before modification)
 Write-Host "`n🔍 [DEBUG] Current SetupComplete.cmd Content:"
-Get-Content -Path $SetupCompletePath
+Get-Content -Path $SetupCompletePath -Raw
 
 # Append custom rename logic
 $CustomRenameScript = @"
@@ -69,7 +69,7 @@ if exist C:\Windows\Setup\Scripts\NewComputerName.txt (
 "@
 
 # Append the script to SetupComplete.cmd
-Add-Content -Path $SetupCompletePath -Value "`r`n$CustomRenameScript"
+Add-Content -Path $SetupCompletePath -Value "`r`n$($CustomRenameScript)"
 
 # Show updated content (after modification)
 Write-Host "`n🔍 [DEBUG] Updated SetupComplete.cmd Content:"
