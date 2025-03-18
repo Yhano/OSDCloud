@@ -30,25 +30,25 @@ if ($NewComputerName -match "^[A-Z]{4}(M|W|L)(LAP|WKS|VDI)\d{6}$") {
 # Define SetupComplete path
 $SetupCompletePath = "C:\Windows\Setup\Scripts\SetupComplete.cmd"
 
-Write-Host "`n🟢 [DEBUG] Modifying SetupComplete.cmd..." -ForegroundColor Green
+Write-Host "Modifying SetupComplete.cmd..." -ForegroundColor Green
 
 # Ensure the Scripts folder exists
 if (!(Test-Path "C:\Windows\Setup\Scripts")) {
-    Write-Host "⚠️ [WARNING] Scripts folder does not exist. Creating it..."
+    Write-Host "Scripts folder does not exist. Creating it..."
     New-Item -Path "C:\Windows\Setup\Scripts" -ItemType Directory -Force
 }
 
 # Check if SetupComplete.cmd exists
 if (Test-Path $SetupCompletePath) {
-    Write-Host "🟢 [DEBUG] SetupComplete.cmd found. Backing up..."
+    Write-Host "SetupComplete.cmd found. Backing up..."
     Copy-Item -Path $SetupCompletePath -Destination "$SetupCompletePath.bak" -Force
 } else {
-    Write-Host "🟠 [INFO] SetupComplete.cmd not found. Creating a new one..."
+    Write-Host "[INFO] SetupComplete.cmd not found. Creating a new one..."
     New-Item -Path $SetupCompletePath -ItemType File -Force
 }
 
 # Show existing content (before modification)
-Write-Host "`n🔍 [DEBUG] Current SetupComplete.cmd Content:"
+Write-Host "`[DEBUG] Current SetupComplete.cmd Content:"
 Get-Content -Path $SetupCompletePath -Raw
 
 # Append custom rename logic
@@ -72,10 +72,10 @@ if exist C:\Windows\Setup\Scripts\NewComputerName.txt (
 Add-Content -Path $SetupCompletePath -Value "`r`n$($CustomRenameScript)"
 
 # Show updated content (after modification)
-Write-Host "`n🔍 [DEBUG] Updated SetupComplete.cmd Content:"
+Write-Host "Updated SetupComplete.cmd Content:"
 Get-Content -Path $SetupCompletePath
 
-Write-Host "`n✅ [SUCCESS] SetupComplete.cmd modification completed."
+Write-Host "SetupComplete.cmd modification completed."
 
 # Pause before restart for verification
 ##Write-Host "Waiting for 10 seconds before rebooting..."
