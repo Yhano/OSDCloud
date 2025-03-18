@@ -38,38 +38,39 @@ if (!(Test-Path "C:\Windows\Setup\Scripts\")) {
     New-Item -ItemType Directory -Path "C:\Windows\Setup\Scripts\" -Force
 }
 
-Start-Sleep -Seconds 30
-
 # Copy Rename.ps1 from WinPE (X:\) to the Windows drive (C:\)
 if (Test-Path $RenameScriptSource) {
     Copy-Item -Path $RenameScriptSource -Destination $RenameScriptDestination -Force
-    Write-Host "Copied Rename.ps1 to C:\Windows\Setup\Scripts\"
+    Write-Host "Copied Rename.ps1 to C:\Windows\Setup\Scripts\""
 } else {
-    Write-Host "Rename.ps1 not found in X:\OSDCloud\Config\Scripts\SetupComplete\"
+    Write-Host "Rename.ps1 not found in X:\OSDCloud\Config\Scripts\SetupComplete\""
 }
 
 Start-Sleep -Seconds 30
 
+# Ensure $RenameCmd and $SetupCompleteCmdPath are initialized
+$RenameCmd = "powershell.exe -File C:\Windows\Setup\Scripts\Rename.ps1"
 $SetupCompleteCmdPath = "C:\Windows\Setup\Scripts\SetupComplete.cmd"
-$RenameCmd = "`r`n%windir%\system32\windowspowershell\v1.0\powershell.exe -executionpolicy bypass -file C:\Windows\Setup\Scripts\Rename.ps1"
 
 # Check if SetupComplete.cmd exists
-if (Test-Path $SetupCompleteCmdPath) {
-    # Read the existing content
-    $content = Get-Content -Path $SetupCompleteCmdPath
+if (Test-Path -Path $SetupCompleteCmdPath) {
+    $content = Get-Content -Path $SetupCompleteCmdPath -Raw
 
-    # Check if Rename.ps1 is already added
     if ($content -notmatch "Rename.ps1") {
         # Ensure we add Rename.ps1 before any 'exit' command
         if ($content -match "exit") {
             $content = $content -replace "exit", "$RenameCmd`r`nexit"
         } else {
-            $content += $RenameCmd
+            $content += "`r`n$RenameCmd"
         }
 
         # Write back the updated content
-        Set-Content -Path $SetupCompleteCmdPath -Value $content -Encoding UTF8
-        Write-Host "Updated SetupComplete.cmd to execute Rename.ps1"
+        try {
+            Set-Content -Path $SetupCompleteCmdPath -Value $content -Encoding UTF8
+            Write-Host "Updated SetupComplete.cmd to execute Rename.ps1"
+        } catch {
+            Write-Host "Failed to update SetupComplete.cmd: $_" -ForegroundColor Red
+        }
     } else {
         Write-Host "Rename.ps1 execution already exists in SetupComplete.cmd, no changes made."
     }
@@ -79,11 +80,10 @@ if (Test-Path $SetupCompleteCmdPath) {
 
 Start-Sleep -Seconds 60
 
+# Pause before restart for verification (uncomment if needed)
+# Write-Host "Waiting for 10 seconds before rebooting..."
+# Start-Sleep -Seconds 10
 
-# Pause before restart for verification
-##Write-Host "Waiting for 10 seconds before rebooting..."
-##Start-Sleep -Seconds 10
-
-# Restart After OS Deployment
-##Write-Host "Restarting system..."
-##wpeutil reboot
+# Restart After OS Deployment (uncomment if needed)
+# Write-Host "Restarting system..."
+# wpeutil reboot
