@@ -48,8 +48,9 @@ if (Test-Path $RenameScriptSource) {
 
 Start-Sleep -Seconds 30
 
-# Ensure $OOBE.cmd are initialized
+# Ensure $OOBE.cmd is initialized
 $OOBECmdPath = "C:\Windows\Setup\Scripts\OOBE.cmd"
+$OOBELogPath = "C:\Windows\Setup\Scripts\OOBE.log"
 
 # Ensure OOBE.cmd is always updated
 if (Test-Path -Path $OOBECmdPath) {
@@ -57,23 +58,33 @@ if (Test-Path -Path $OOBECmdPath) {
     Remove-Item -Path $OOBECmdPath -Force
 }
 
-# Create a fresh SetupComplete.cmd
+# Create a fresh OOBE.cmd with logging
 $OOBECMD = @'
 @echo off
-# Execute OOBE Tasks
-start /wait powershell.exe -NoL -ExecutionPolicy Bypass -F C:\Windows\Setup\Scripts\Rename.ps1
+echo [%DATE% %TIME%] OOBE.cmd started >> C:\Windows\Setup\Scripts\OOBE.log
 
-# Below a PS session for debug and testing in system context, # when not needed 
-# start /wait powershell.exe -NoL -ExecutionPolicy Bypass
+:: Execute OOBE Tasks
+echo [%DATE% %TIME%] Running Rename.ps1... >> C:\Windows\Setup\Scripts\OOBE.log
+start /wait powershell.exe -NoL -ExecutionPolicy Bypass -File C:\Windows\Setup\Scripts\Rename.ps1 >> C:\Windows\Setup\Scripts\Rename.log 2>&1
 
+:: Log execution success/failure
+if %errorlevel% neq 0 (
+    echo [%DATE% %TIME%] ERROR: Rename.ps1 failed! >> C:\Windows\Setup\Scripts\OOBE.log
+) else (
+    echo [%DATE% %TIME%] Rename.ps1 executed successfully. >> C:\Windows\Setup\Scripts\OOBE.log
+)
+
+:: Debug - Keep PowerShell open if needed
+:: start /wait powershell.exe -NoL -ExecutionPolicy Bypass
+
+echo [%DATE% %TIME%] OOBE.cmd completed. >> C:\Windows\Setup\Scripts\OOBE.log
 exit 
 '@
 
-$OOBECMD | Out-File -FilePath 'C:\Windows\Setup\scripts\oobe.cmd' -Encoding ascii -Force 
-
+# Write OOBE.cmd to file
 Set-Content -Path $OOBECmdPath -Value $OOBECMD -Encoding ASCII -Force
 
-Write-Host "OOBE.cmd successfully created!" -ForegroundColor Green
+Write-Host "OOBE.cmd successfully created with logging!" -ForegroundColor Green
 
 Start-Sleep -Seconds 60
 
