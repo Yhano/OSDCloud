@@ -64,19 +64,25 @@ setlocal
 
 :: Read the new computer name from the file
 set /p NEWNAME=<C:\Windows\Setup\Scripts\NewComputerName.txt
-echo New computer name read from file: %NEWNAME% >> C:\Windows\Temp\rename.log
+echo New computer name read from file: %NEWNAME% >> C:\Windows\Setup\Scripts\rename.log
 
 :: Ensure the name is not empty
 if "%NEWNAME%"=="" (
-    echo Error: New computer name is empty. Exiting... >> C:\Windows\Temp\rename.log
+    echo Error: New computer name is empty. Exiting... >> C:\Windows\Setup\Scripts\rename.log
     exit /b 1
 )
 
-:: Set the new computer name in the registry before reboot
-reg add "HKEY_LOCAL_MACHINE\System\Setup" /v "ComputerName" /t REG_SZ /d %NEWNAME% /f >> C:\Windows\Temp\rename.log
+:: Set the new computer name in the registry (for reference)
+reg add "HKEY_LOCAL_MACHINE\System\Setup" /v "ComputerName" /t REG_SZ /d %NEWNAME% /f >> C:\Windows\Setup\Scripts\rename.log
 
-:: Log success
-echo Computer name set to %NEWNAME% and will apply on next reboot. >> C:\Windows\Temp\rename.log
+:: Force the rename immediately using WMI
+wmic computersystem where name="%COMPUTERNAME%" call rename name="%NEWNAME%" >> C:\Windows\Setup\Scripts\rename.log
+
+:: Check if rename was successful
+if %errorlevel% neq 0 (
+    echo Error: WMI rename failed. Exiting... >> C:\Windows\Setup\Scripts\rename.log
+    exit /b 1
+)
 
 endlocal
 '@
