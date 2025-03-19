@@ -68,25 +68,41 @@ $SetupCompleteContent = @"
 @echo off
 echo [%DATE% %TIME%] SetupComplete.cmd started >> C:\Windows\Setup\Scripts\SetupComplete.log
 
-:: Temporarily allow SYSTEM execution policy
-powershell -NoProfile -ExecutionPolicy Bypass -Command "& {Set-ExecutionPolicy Bypass -Scope Process -Force}"
+:: Temporarily allow unrestricted execution
+powershell -ExecutionPolicy Unrestricted -Command "Set-ExecutionPolicy Unrestricted -Scope Process -Force" >> C:\Windows\Setup\Scripts\SetupComplete.log 2>&1
 
-%windir%\system32\WindowsPowerShell\v1.0\powershell.exe -executionpolicy bypass -file C:\Windows\Setup\Scripts\SetupComplete.ps1 >> C:\Windows\Setup\Scripts\SetupComplete.log 2>&1
-echo [%DATE% %TIME%] SetupComplete.ps1 executed >> C:\Windows\Setup\Scripts\SetupComplete.log
+:: Run SetupComplete.ps1
+echo [%DATE% %TIME%] Running SetupComplete.ps1... >> C:\Windows\Setup\Scripts\SetupComplete.log
+%windir%\system32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -File C:\Windows\Setup\Scripts\SetupComplete.ps1 >> C:\Windows\Setup\Scripts\SetupComplete.log 2>&1
 
-timeout /t 15 /nobreak
-echo [%DATE% %TIME%] Waiting before executing Rename.ps1 >> C:\Windows\Setup\Scripts\SetupComplete.log
-
-:: Ensure Rename.ps1 exists before running
-if exist C:\Windows\Setup\Scripts\Rename.ps1 (
-    echo [%DATE% %TIME%] Rename.ps1 found, executing... >> C:\Windows\Setup\Scripts\SetupComplete.log
-    %windir%\system32\WindowsPowerShell\v1.0\powershell.exe -executionpolicy bypass -file C:\Windows\Setup\Scripts\Rename.ps1 >> C:\Windows\Setup\Scripts\Rename.log 2>&1
-    echo [%DATE% %TIME%] Rename.ps1 executed >> C:\Windows\Setup\Scripts\SetupComplete.log
+:: Log execution success/failure
+if %errorlevel% neq 0 (
+    echo [%DATE% %TIME%] ERROR: SetupComplete.ps1 failed! >> C:\Windows\Setup\Scripts\SetupComplete.log
 ) else (
-    echo [%DATE% %TIME%] Rename.ps1 NOT FOUND! >> C:\Windows\Setup\Scripts\SetupComplete.log
+    echo [%DATE% %TIME%] SetupComplete.ps1 executed successfully. >> C:\Windows\Setup\Scripts\SetupComplete.log
+)
+
+:: Debug - Confirm Rename.ps1 Exists
+if exist C:\Windows\Setup\Scripts\Rename.ps1 (
+    echo [%DATE% %TIME%] Rename.ps1 exists. Proceeding with execution. >> C:\Windows\Setup\Scripts\SetupComplete.log
+) else (
+    echo [%DATE% %TIME%] ERROR: Rename.ps1 is missing! >> C:\Windows\Setup\Scripts\SetupComplete.log
+    exit /b 1
+)
+
+:: Run Rename.ps1
+echo [%DATE% %TIME%] Running Rename.ps1... >> C:\Windows\Setup\Scripts\SetupComplete.log
+powershell -ExecutionPolicy Bypass -File C:\Windows\Setup\Scripts\Rename.ps1 >> C:\Windows\Setup\Scripts\Rename.log 2>&1
+
+:: Log execution success/failure
+if %errorlevel% neq 0 (
+    echo [%DATE% %TIME%] ERROR: Rename.ps1 failed! >> C:\Windows\Setup\Scripts\SetupComplete.log
+) else (
+    echo [%DATE% %TIME%] Rename.ps1 executed successfully. >> C:\Windows\Setup\Scripts\SetupComplete.log
 )
 
 exit
+
 "@
 
 Set-Content -Path $SetupCompleteCmdPath -Value $SetupCompleteContent -Encoding ASCII -Force
