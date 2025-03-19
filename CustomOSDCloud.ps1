@@ -5,25 +5,25 @@ Write-Host -ForegroundColor Cyan "Updating OSD Module..."
 Install-Module OSD -Force -ErrorAction SilentlyContinue
 Import-Module OSD -Force -ErrorAction SilentlyContinue
 
-# Prompt the user for the OS language
-$osLanguage = Read-Host -Prompt "Please enter the OS language (e.g., en-US, de-DE)"
+# Prompt the user for OS language
+$osLanguage = Read-Host -Prompt "Enter OS language (e.g., en-US, de-DE)"
 
-# Set the global OSDCloud variable
+# Set OSDCloud global variable
 $global:MyOSDCloud = [PSCustomObject]@{
-    ClearDisk = $true  # Set to $false if you do not want to clear the disk
+    ClearDisk = $true  # Change to $false if you don't want to clear the disk
 }
 
-# Start OSDCloud Deployment with Custom OS Settings
+# Start OSDCloud Deployment
 Write-Host "Starting OSDCloud deployment..."
 Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage $osLanguage -OSActivation Volume
 
-# Wait for OSDCloud to finish
-Write-Host "Waiting for OSDCloud deployment to complete..."
+# Pause for OSDCloud completion
 Start-Sleep -Seconds 10
 
+# Prompt user for computer name
 $NewComputerName = Read-Host "Enter new computer name"
 
-# Validate Hostname
+# Validate hostname format
 if ($NewComputerName -match "^[A-Z]{4}(M|W|L)(LAP|WKS|VDI)\d{6}$") {
     Write-Host "Saving new computer name: $NewComputerName"
     Set-Content -Path "C:\Windows\Setup\Scripts\NewComputerName.txt" -Value $NewComputerName
@@ -34,27 +34,26 @@ if ($NewComputerName -match "^[A-Z]{4}(M|W|L)(LAP|WKS|VDI)\d{6}$") {
 
 Start-Sleep -Seconds 30
 
-# Define source and destination paths
+# Define script paths
 $RenameScriptSource = "X:\OSDCloud\Config\Scripts\SetupComplete\Rename.ps1"
 $RenameScriptDestination = "C:\Windows\Setup\Scripts\Rename.ps1"
 
-# Ensure the Windows setup scripts folder exists
+# Ensure Windows setup scripts folder exists
 if (!(Test-Path "C:\Windows\Setup\Scripts\")) {
     New-Item -ItemType Directory -Path "C:\Windows\Setup\Scripts\" -Force
 }
 
-# Copy Rename.ps1 from WinPE (X:\) to the Windows drive (C:\)
+# Copy Rename.ps1 from WinPE (X:\) to Windows (C:\)
 if (Test-Path $RenameScriptSource) {
     Copy-Item -Path $RenameScriptSource -Destination $RenameScriptDestination -Force
     Write-Host "Copied Rename.ps1 to C:\Windows\Setup\Scripts\"
 } else {
-    Write-Host "Rename.ps1 not found in X:\OSDCloud\Config\Scripts\SetupComplete\"
+    Write-Host "ERROR: Rename.ps1 not found in X:\OSDCloud\Config\Scripts\SetupComplete\"
 }
 
 Start-Sleep -Seconds 30
 
-# Ensure $RenameCmd and $SetupCompleteCmdPath are initialized
-$RenameCmd = "rn%windir%\system32\WindowsPowerShell\v1.0\powershell.exe -executionpolicy bypass -file C:\Windows\Setup\Scripts\Rename.ps1"
+# Define SetupComplete.cmd path
 $SetupCompleteCmdPath = "C:\Windows\Setup\Scripts\SetupComplete.cmd"
 
 # Ensure SetupComplete.cmd is always updated
@@ -63,42 +62,51 @@ if (Test-Path -Path $SetupCompleteCmdPath) {
     Remove-Item -Path $SetupCompleteCmdPath -Force
 }
 
-# Create a fresh SetupComplete.cmd
+# Create a fresh SetupComplete.cmd with detailed logging
 $SetupCompleteContent = @"
 @echo off
-set LOGFILE=C:\Windows\Setup\Scripts\SetupComplete.log
+echo [%DATE% %TIME%] SetupComplete.cmd started >> C:\Windows\Setup\Scripts\SetupComplete.log
 
-echo [%DATE% %TIME%] SetupComplete.cmd started >> %LOGFILE%
+:: Ensure SetupComplete.cmd has SYSTEM permissions
+icacls "C:\Windows\Setup\Scripts\SetupComplete.cmd" /grant SYSTEM:F >> C:\Windows\Setup\Scripts\SetupComplete.log 2>&1
 
-:: Wait to ensure system is fully ready
-timeout /t 30 /nobreak
-echo [%DATE% %TIME%] System delay complete, proceeding... >> %LOGFILE%
+:: Debug log - test execution
+echo [%DATE% %TIME%] TEST: SetupComplete.cmd is running. >> C:\Windows\Setup\Scripts\test.log
 
-:: Check if Rename.ps1 exists before running
-if exist C:\Windows\Setup\Scripts\Rename.ps1 (
-    echo [%DATE% %TIME%] Rename.ps1 found. Proceeding with execution... >> %LOGFILE%
+:: Temporarily allow unrestricted PowerShell execution
+powershell -ExecutionPolicy Unrestricted -Command "Set-ExecutionPolicy Unrestricted -Scope Process -Force" >> C:\Windows\Setup\Scripts\SetupComplete.log 2>&1
+
+:: Run SetupComplete.ps1
+echo [%DATE% %TIME%] Running SetupComplete.ps1... >> C:\Windows\Setup\Scripts\SetupComplete.log
+%windir%\system32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -File C:\Windows\Setup\Scripts\SetupComplete.ps1 >> C:\Windows\Setup\Scripts\SetupComplete.log 2>&1
+
+:: Log SetupComplete.ps1 success/failure
+if %errorlevel% neq 0 (
+    echo [%DATE% %TIME%] ERROR: SetupComplete.ps1 failed! >> C:\Windows\Setup\Scripts\SetupComplete.log
 ) else (
-    echo [%DATE% %TIME%] ERROR: Rename.ps1 is missing! >> %LOGFILE%
+    echo [%DATE% %TIME%] SetupComplete.ps1 executed successfully. >> C:\Windows\Setup\Scripts\SetupComplete.log
+)
+
+:: Debug - Confirm Rename.ps1 Exists
+if exist C:\Windows\Setup\Scripts\Rename.ps1 (
+    echo [%DATE% %TIME%] Rename.ps1 exists. Proceeding with execution. >> C:\Windows\Setup\Scripts\SetupComplete.log
+) else (
+    echo [%DATE% %TIME%] ERROR: Rename.ps1 is missing! >> C:\Windows\Setup\Scripts\SetupComplete.log
     exit /b 1
 )
 
-:: Log file permissions (debugging step)
-echo [%DATE% %TIME%] Checking Rename.ps1 permissions... >> %LOGFILE%
-icacls C:\Windows\Setup\Scripts\Rename.ps1 >> %LOGFILE% 2>&1
+:: Run Rename.ps1
+echo [%DATE% %TIME%] Running Rename.ps1... >> C:\Windows\Setup\Scripts\SetupComplete.log
+powershell -ExecutionPolicy Bypass -File C:\Windows\Setup\Scripts\Rename.ps1 >> C:\Windows\Setup\Scripts\Rename.log 2>&1
 
-:: Attempt to run Rename.ps1 with PowerShell
-echo [%DATE% %TIME%] Running Rename.ps1... >> %LOGFILE%
-%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -File C:\Windows\Setup\Scripts\Rename.ps1 >> C:\Windows\Setup\Scripts\Rename.log 2>&1
-
-:: Log execution result
+:: Log Rename.ps1 success/failure
 if %errorlevel% neq 0 (
-    echo [%DATE% %TIME%] ERROR: Rename.ps1 failed to execute! Exit Code: %errorlevel% >> %LOGFILE%
+    echo [%DATE% %TIME%] ERROR: Rename.ps1 failed! >> C:\Windows\Setup\Scripts\SetupComplete.log
 ) else (
-    echo [%DATE% %TIME%] Rename.ps1 executed successfully. >> %LOGFILE%
+    echo [%DATE% %TIME%] Rename.ps1 executed successfully. >> C:\Windows\Setup\Scripts\SetupComplete.log
 )
 
 exit
-
 "@
 
 Set-Content -Path $SetupCompleteCmdPath -Value $SetupCompleteContent -Encoding ASCII -Force
@@ -107,6 +115,12 @@ Write-Host "SetupComplete.cmd successfully created!" -ForegroundColor Green
 
 Start-Sleep -Seconds 60
 
+# Debugging: Test if SetupComplete.cmd is executable manually
+Write-Host "Testing SetupComplete.cmd execution..."
+Start-Process -FilePath "C:\Windows\Setup\Scripts\SetupComplete.cmd" -Wait -NoNewWindow
+
+Write-Host "SetupComplete.cmd execution test completed."
+Start-Sleep -Seconds 10
 # Pause before restart for verification (uncomment if needed)
 # Write-Host "Waiting for 10 seconds before rebooting..."
 # Start-Sleep -Seconds 10
