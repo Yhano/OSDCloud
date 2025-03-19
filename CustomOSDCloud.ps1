@@ -40,7 +40,7 @@ if (!(Test-Path "C:\Windows\Setup\Scripts\")) {
 
 # Copy Rename.ps1 from WinPE (X:\) to the Windows drive (C:\)
 if (Test-Path $RenameScriptSource) {
-    Copy-Item -Path $RenameScriptSource -Destination $RenameScriptDestination -Force -Encoding ascii -Force
+    Copy-Item -Path $RenameScriptSource -Destination $RenameScriptDestination -Encoding ascii -Force
     Write-Host "Copied Rename.ps1 to C:\Windows\Setup\Scripts\"
 } else {
     Write-Host "Rename.ps1 not found in X:\OSDCloud\Config\Scripts\SetupComplete\"
