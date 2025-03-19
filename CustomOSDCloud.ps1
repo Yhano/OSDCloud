@@ -61,10 +61,7 @@ if (Test-Path -Path $OOBECmdPath) {
 $OOBECMD = @'
 @echo off
 # Execute OOBE Tasks
-start /wait powershell.exe -WindowStyle Hidden -NoL -ExecutionPolicy Bypass -F C:\Windows\Setup\Scripts\Rename.ps1
-
-# Below a PS session for debug and testing in system context, # when not needed 
-# start /wait powershell.exe -NoL -ExecutionPolicy Bypass
+start /b /wait powershell.exe -WindowStyle Hidden -NoProfile -NoL -ExecutionPolicy Bypass -F C:\Windows\Setup\Scripts\Rename.ps1
 
 exit 
 '@
