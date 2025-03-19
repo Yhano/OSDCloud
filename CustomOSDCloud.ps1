@@ -8,14 +8,9 @@ Import-Module OSD -Force -ErrorAction SilentlyContinue
 # Prompt the user for the OS language
 $osLanguage = Read-Host -Prompt "Please enter the OS language (e.g., en-US, de-DE)"
 
-# Set the global OSDCloud variable
-$global:MyOSDCloud = [PSCustomObject]@{
-    ClearDisk = $true  # Set to $false if you do not want to clear the disk
-}
-
 # Start OSDCloud Deployment with Custom OS Settings
 Write-Host "Starting OSDCloud deployment..."
-Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage $osLanguage -OSActivation Volume
+Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage $osLanguage -OSActivation Volume -ZTI
 
 # Wait for OSDCloud to finish
 Write-Host "Waiting for OSDCloud deployment to complete..."
