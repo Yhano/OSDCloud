@@ -60,10 +60,25 @@ if (Test-Path -Path $OOBECmdPath) {
 # Create a fresh SetupComplete.cmd
 $OOBECMD = @'
 @echo off
-# Execute OOBE Tasks
-start /b /wait powershell.exe -WindowStyle Hidden -NoProfile -NoL -ExecutionPolicy Bypass -F C:\Windows\Setup\Scripts\Rename.ps1
+setlocal
 
-exit 
+:: Read the new computer name from the file
+set /p NEWNAME=<C:\Windows\Setup\Scripts\NewComputerName.txt
+echo New computer name read from file: %NEWNAME% >> C:\Windows\Temp\rename.log
+
+:: Ensure the name is not empty
+if "%NEWNAME%"=="" (
+    echo Error: New computer name is empty. Exiting... >> C:\Windows\Temp\rename.log
+    exit /b 1
+)
+
+:: Set the new computer name in the registry before reboot
+reg add "HKEY_LOCAL_MACHINE\System\Setup" /v "ComputerName" /t REG_SZ /d %NEWNAME% /f >> C:\Windows\Temp\rename.log
+
+:: Log success
+echo Computer name set to %NEWNAME% and will apply on next reboot. >> C:\Windows\Temp\rename.log
+
+endlocal
 '@
 
 $OOBECMD | Out-File -FilePath 'C:\Windows\Setup\scripts\oobe.cmd' -Encoding ascii -Force 
