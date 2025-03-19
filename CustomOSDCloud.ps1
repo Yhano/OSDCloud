@@ -73,7 +73,7 @@ powershell -ExecutionPolicy Unrestricted -Command "Set-ExecutionPolicy Unrestric
 
 :: Run SetupComplete.ps1
 echo [%DATE% %TIME%] Running SetupComplete.ps1... >> C:\Windows\Setup\Scripts\SetupComplete.log
-%windir%\system32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -File C:\Windows\Setup\Scripts\SetupComplete.ps1 >> C:\Windows\Setup\Scripts\SetupComplete.log 2>&1
+start /wait %windir%\system32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -File C:\Windows\Setup\Scripts\SetupComplete.ps1 >> C:\Windows\Setup\Scripts\SetupComplete.log 2>&1
 
 :: Log execution success/failure
 if %errorlevel% neq 0 (
@@ -92,7 +92,7 @@ if exist C:\Windows\Setup\Scripts\Rename.ps1 (
 
 :: Run Rename.ps1
 echo [%DATE% %TIME%] Running Rename.ps1... >> C:\Windows\Setup\Scripts\SetupComplete.log
-powershell -ExecutionPolicy Bypass -File C:\Windows\Setup\Scripts\Rename.ps1 >> C:\Windows\Setup\Scripts\Rename.log 2>&1
+start /wait powershell.exe -NoL -ExecutionPolicy Bypass -File C:\Windows\Setup\Scripts\Rename.ps1 >> C:\Windows\Setup\Scripts\Rename.log 2>&1
 
 :: Log execution success/failure
 if %errorlevel% neq 0 (
