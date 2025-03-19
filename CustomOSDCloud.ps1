@@ -8,11 +8,17 @@ Import-Module OSD -Force -ErrorAction SilentlyContinue
 # Prompt the user for the OS language
 $osLanguage = Read-Host -Prompt "Please enter the OS language (e.g., en-US, de-DE)"
 
-$OSDCloud.ClearDiskConfirm = $false
+$AutopilotProfilePath = "C:\Windows\Provisioning\Autopilot\autopilot.json"
+
+if (Test-Path $AutopilotProfilePath) {
+    Write-Host "Autopilot profile found. Proceeding with OSDCloud deployment..." -ForegroundColor Green
+} else {
+    Write-Host "Autopilot profile NOT found! The deployment may require manual selection." -ForegroundColor Red
+}
 
 # Start OSDCloud Deployment with Custom OS Settings
 Write-Host "Starting OSDCloud deployment..."
-Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage $osLanguage -OSActivation Volume
+Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage $osLanguage -OSActivation Volume -ClearDiskConfirm:$false
 
 # Wait for OSDCloud to finish
 Write-Host "Waiting for OSDCloud deployment to complete..."
