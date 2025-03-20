@@ -3,8 +3,8 @@ Write-Host -ForegroundColor Cyan "Starting OSDCloud Custom Deployment..."
 # Ensure OSD Module is Up-to-Date
 Write-Host -ForegroundColor Cyan "Updating OSD Module..."
 try {
-    Install-Module OSD -Force
-    Import-Module OSD -Force
+    Install-Module OSD -Force -ErrorAction SilentlyContinue
+    Import-Module OSD -Force -ErrorAction SilentlyContinue
 } catch {
     Write-Host -ForegroundColor Yellow "Warning: Failed to install or import OSD module. Continuing..."
 }
