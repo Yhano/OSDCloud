@@ -65,5 +65,5 @@ try {
 
 # Restart the system after OS deployment
 Write-Host "Restarting system in 10 seconds..."
-Start-Sleep -Seconds 10
-wpeutil reboot
+#Start-Sleep -Seconds 10
+#wpeutil reboot
