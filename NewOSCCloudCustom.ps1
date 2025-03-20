@@ -1,18 +1,32 @@
+# Set error handling to stop execution on errors
+$ErrorActionPreference = 'Stop'
+
 Write-Host -ForegroundColor Cyan "Starting OSDCloud Custom Deployment..."
 
 # Ensure OSD Module is Up-to-Date
 Write-Host -ForegroundColor Cyan "Updating OSD Module..."
-Install-Module OSD -Force -ErrorAction SilentlyContinue
-Import-Module OSD -Force -ErrorAction SilentlyContinue
+try {
+    Install-Module OSD -Force -ErrorAction Stop
+    Import-Module OSD -Force -ErrorAction Stop
+} catch {
+    Write-Host -ForegroundColor Red "Failed to install or import OSD module. Exiting..."
+    Exit 1
+}
 
+# Prompt the user for the computer name
 $ComputerName = Read-Host "Enter computer name"
 
 # Validate Hostname
 if ($ComputerName -match "^[A-Z]{4}(M|W|L)(LAP|WKS|VDI)\d{6}$") {
-    Write-Host "$ComputerName is valid, proceeding updating registry key..."
-    reg add HKLM\SYSTEM\Setup /v ComputerName /t REG_SZ /d $ComputerName /f
+    Write-Host "$ComputerName is valid, proceeding with registry update..."
+    try {
+        reg add HKLM\SYSTEM\Setup /v ComputerName /t REG_SZ /d $ComputerName /f
+    } catch {
+        Write-Host -ForegroundColor Red "Failed to update registry key. Exiting..."
+        Exit 1
+    }
 } else {
-    Write-Host "Invalid name. Skipping rename."
+    Write-Host -ForegroundColor Red "Invalid name format. Exiting..."
     Exit 1
 }
 
@@ -21,16 +35,12 @@ $osLanguage = Read-Host -Prompt "Please enter the OS language (e.g., en-US, de-D
 
 # Start OSDCloud Deployment with Custom OS Settings
 Write-Host "Starting OSDCloud deployment..."
-Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage $osLanguage -OSActivation Volume -ZTI
+try {
+    Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage $osLanguage -OSActivation Volume -ZTI
+} catch {
+    Write-Host -ForegroundColor Red "OSDCloud deployment failed. Exiting..."
+    Exit 1
+}
 
 # Wait for OSDCloud to finish
-Write-Host "Waiting for OSDCloud deployment to complete...
-
-
-# Pause before restart for verification (uncomment if needed)
-# Write-Host "Waiting for 10 seconds before rebooting..."
-# Start-Sleep -Seconds 10
-
-# Restart After OS Deployment (uncomment if needed)
-# Write-Host "Restarting system..."
-# wpeutil reboot
+Write-Host "Waiting for OSDCloud deployment to complete..."
