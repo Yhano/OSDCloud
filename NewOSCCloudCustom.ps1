@@ -15,7 +15,6 @@ do {
 
     # Validate Hostname (Must be uppercase and match specific format)
     if ($ComputerName -match "^[A-Z]{4}(M|W|L)(LAP|WKS|VDI)\d{6}$") {
-        Write-Host "$ComputerName is valid. Storing for later use..."
         $Valid = $true  # Exit loop
     } else {
         Write-Host -ForegroundColor Red "Invalid name format. Please try again."
