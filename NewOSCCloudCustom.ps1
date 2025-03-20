@@ -1,7 +1,7 @@
 Clear-Host
 Write-Host -ForegroundColor Cyan "Starting OSDCloud Custom Deployment..."
 
-# Ensure OSD Module is Up-to-Date
+# Ensure OSD Module is Up-to-Date (Silently)
 Write-Host -ForegroundColor Cyan "Updating OSD Module..."
 try {
     Install-Module OSD -Force -ErrorAction SilentlyContinue | Out-Null
@@ -16,6 +16,8 @@ do {
     $ComputerName = (Read-Host "Enter computer name").ToUpper()
 
     if ($ComputerName -match "^[A-Z]{4}(M|W|L)(LAP|WKS|VDI)\d{6}$") {
+        Write-Host -ForegroundColor Green "Valid. Moving to next step..."
+        Start-Sleep -Seconds 2
         break  # Exit loop if valid
     } else {
         Write-Host -ForegroundColor Red "Invalid name format. Please try again."
@@ -23,25 +25,12 @@ do {
     }
 } until ($false)
 
-# Prompt for OS Language
-do {
-    Clear-Host
-    $osLanguage = Read-Host -Prompt "Please enter the OS language (e.g., en-US, de-DE)"
+# Hide all output & run deployment
+Write-Host -ForegroundColor Cyan "Deployment in progress... Please wait."
 
-    Write-Host "Starting OSDCloud deployment with language: $osLanguage..."
-    
-    # Run OSDCloud Silently
-    Start-Process -FilePath "powershell.exe" -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage $osLanguage -OSActivation Volume -ZTI *> `$null`"" -WindowStyle Hidden -Wait
+$null = Start-Process -FilePath "powershell.exe" -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSActivation Volume -ZTI *> `$null`"" -WindowStyle Hidden -Wait
 
-    if ($LASTEXITCODE -eq 0) {
-        break  # Exit loop if successful
-    } else {
-        Write-Host -ForegroundColor Red "OSDCloud process failed. Please try again."
-        Start-Sleep -Seconds 2
-    }
-} until ($false)
-
-# Define and save Unattend.xml silently
+# Define & save Unattend.xml
 $UnattendXML = @"
 <?xml version="1.0" encoding="utf-8"?>
 <unattend xmlns="urn:schemas-microsoft-com:unattend">
@@ -52,7 +41,6 @@ $UnattendXML = @"
     </settings>
 </unattend>
 "@
-
 $UnattendPath = "C:\Windows\Panther\Unattend.xml"
 $UnattendXML | Out-File -Encoding utf8 -FilePath $UnattendPath -Force
 
