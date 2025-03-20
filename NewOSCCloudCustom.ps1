@@ -1,20 +1,4 @@
-$LogFile = "C:\ProgramData\OSDCloudDeployment.log"
 
-# Function to log messages
-function Write-Log {
-    param (
-        [string]$Message,
-        [string]$Color = "White"
-    )
-    $Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    $LogEntry = "$Timestamp - $Message"
-    
-    # Append to log file
-    Add-Content -Path $LogFile -Value $LogEntry
-    
-    # Display in console with color
-    Write-Host -ForegroundColor $Color $Message
-}
 
 Write-Log "Starting OSDCloud Custom Deployment..." -Color Cyan
 
