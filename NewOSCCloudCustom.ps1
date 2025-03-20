@@ -9,8 +9,7 @@ try {
     Install-Module OSD -Force -ErrorAction Stop
     Import-Module OSD -Force -ErrorAction Stop
 } catch {
-    Write-Host -ForegroundColor Red "Failed to install or import OSD module. Exiting..."
-    Exit 1
+    Write-Host -ForegroundColor Yellow "Warning: Failed to install or import OSD module. Continuing..."
 }
 
 # Prompt the user for the computer name
