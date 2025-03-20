@@ -1,36 +1,46 @@
-Clear-Host
 Write-Host -ForegroundColor Cyan "Starting OSDCloud Custom Deployment..."
 
-# Ensure OSD Module is Up-to-Date (Silently)
-Write-Host -ForegroundColor Cyan "Updating OSD Module..."
+# Ensure OSD Module is Up-to-Date (Silent)
 try {
     Install-Module OSD -Force -ErrorAction SilentlyContinue | Out-Null
     Import-Module OSD -Force -ErrorAction SilentlyContinue | Out-Null
 } catch {
-    Write-Host -ForegroundColor Yellow "Warning: Failed to install or import OSD module. Continuing..."
+    Write-Host -ForegroundColor Yellow "Warning: OSD module installation/import failed. Proceeding..."
 }
 
-# Prompt for Computer Name
 do {
-    Clear-Host
+    # Prompt the user for the computer name and force uppercase
     $ComputerName = (Read-Host "Enter computer name").ToUpper()
 
+    # Validate Hostname (Must be uppercase and match specific format)
     if ($ComputerName -match "^[A-Z]{4}(M|W|L)(LAP|WKS|VDI)\d{6}$") {
-        Write-Host -ForegroundColor Green "Valid. Moving to next step..."
-        Start-Sleep -Seconds 2
-        break  # Exit loop if valid
+        $Valid = $true  # Exit loop
     } else {
         Write-Host -ForegroundColor Red "Invalid name format. Please try again."
-        Start-Sleep -Seconds 2
+        $Valid = $false  # Keep looping
     }
-} until ($false)
+} until ($Valid)
 
-# Hide all output & run deployment
-Write-Host -ForegroundColor Cyan "Deployment in progress... Please wait."
+do {
+    # Prompt the user for the OS language
+    $osLanguage = Read-Host -Prompt "Please enter the OS language (e.g., en-US, de-DE)"
 
-$null = Start-Process -FilePath "powershell.exe" -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSActivation Volume -ZTI *> `$null`"" -WindowStyle Hidden -Wait
+    # Show only deployment progress message
+    Write-Host -ForegroundColor Cyan "Deployment in progress..."
+    
+    try {
+        Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage $osLanguage -OSActivation Volume -ZTI | Out-Null
+        $Success = $true  # Exit loop if successful
+    } catch {
+        Write-Host -ForegroundColor Red "Invalid OS Language entered. Please try again."
+        $Success = $false  # Keep looping
+    }
+} until ($Success)
 
-# Define & save Unattend.xml
+# OS Installation Completed
+Write-Host "Operating system installation completed. Adding additional configuration to complete the OSCloud deployment..."
+
+# Define minimal Unattend.xml
 $UnattendXML = @"
 <?xml version="1.0" encoding="utf-8"?>
 <unattend xmlns="urn:schemas-microsoft-com:unattend">
@@ -41,9 +51,13 @@ $UnattendXML = @"
     </settings>
 </unattend>
 "@
+
+# Define the Unattend.xml path
 $UnattendPath = "C:\Windows\Panther\Unattend.xml"
+
+# Save the Unattend.xml file silently
 $UnattendXML | Out-File -Encoding utf8 -FilePath $UnattendPath -Force
 
-Write-Host -ForegroundColor Green "Deployment completed. Restarting system..."
-Start-Sleep -Seconds 5
+# Restart After OS Deployment
+Start-Sleep -Seconds 10
 wpeutil reboot
