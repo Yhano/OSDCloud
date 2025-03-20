@@ -21,19 +21,43 @@ do {
     }
 } until ($Valid)
 
+# Check if ComputerName is defined
+if (-not $ComputerName) {
+    Write-Host "Error: Computer name is not defined. Exiting script." -ForegroundColor Red
+    Read-Host "Press Enter to exit"
+    return
+}
+
+# Define valid OS languages
+$validLanguages = @(
+    "ar-sa", "bg-bg", "cs-cz", "da-dk", "de-de", "el-gr", "en-gb", "en-us",
+    "es-es", "es-mx", "et-ee", "fi-fi", "fr-ca", "fr-fr", "he-il", "hr-hr", "hu-hu",
+    "it-it", "ja-jp", "ko-kr", "lt-lt", "lv-lv", "nb-no", "nl-nl", "pl-pl", "pt-br",
+    "pt-pt", "ro-ro", "ru-ru", "sk-sk", "sl-si", "sr-latn-rs", "sv-se", "th-th", "tr-tr",
+    "uk-ua", "zh-cn", "zh-tw"
+)
+
 # Prompt for OS Language
 do {
     $osLanguage = Read-Host "Please enter the OS language (e.g., en-US, de-DE)"
-    
-    try {
-        Write-Host "Starting OSDCloud deployment with language: $osLanguage..."
-        Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage $osLanguage -OSActivation Volume -ZTI
+    if ($validLanguages -contains $osLanguage) {
+        Write-Host "Valid OS Language entered: $osLanguage"
         $Success = $true
-    } catch {
+    } else {
         Write-Host "Invalid OS Language entered. Please try again." -ForegroundColor Red
         $Success = $false
     }
 } until ($Success)
+
+# Start OSDCloud Deployment
+Write-Host "Starting OSDCloud deployment with language: $osLanguage..."
+try {
+    Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage $osLanguage -OSActivation Volume -ZTI
+    Write-Host "OSDCloud deployment started successfully."
+} catch {
+    Write-Host "Error: OSDCloud deployment failed. Error details: $_" -ForegroundColor Red
+    exit 1
+}
 
 Write-Host -ForegroundColor Cyan "Deployment in progress..."
 
