@@ -1,12 +1,43 @@
 Write-Host -ForegroundColor Cyan "Starting OSDCloud Custom Deployment..."
 
+# Define Log Path
+$LogFileName = "InitialDeployment_$(Get-Date -Format 'yyyyMMdd_HHmmss').log"
+$LogFilePath = "X:\OSDCloud\Logs\$LogFileName"
+
+# Function to Write Logs
+function Write-Log {
+    param (
+        [string]$Message,
+        [string]$Color = "White"
+    )
+    $Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $LogEntry = "$Timestamp - $Message"
+    
+    # Output to console
+    Write-Host $Message -ForegroundColor $Color
+    
+    # Output to log file
+    Add-Content -Path $LogFilePath -Value $LogEntry
+}
+
+# Function to Handle Fatal Errors
+function Stop-Script {
+    param (
+        [string]$ErrorMessage
+    )
+    Write-Log "FATAL ERROR: $ErrorMessage" "Red"
+    Write-Host "`nPress any key to exit..."
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    exit 1
+}
+
 # Ensure OSD Module is Up-to-Date (Silent)
 try {
     Install-Module OSD -Force -ErrorAction Stop
     Import-Module OSD -Force -ErrorAction Stop
-    Write-Host "OSD module installed and imported successfully."
+    Write-Log "OSD module installed and imported successfully." "Green"
 } catch {
-    Write-Host "Warning: OSD module installation/import failed. Proceeding..." -ForegroundColor Yellow
+    Write-Log "Warning: OSD module installation/import failed. Proceeding with deployment..." "Yellow"
 }
 
 # Prompt for Computer Name
@@ -14,19 +45,12 @@ do {
     $ComputerName = (Read-Host "Enter computer name").ToUpper()
     if ($ComputerName -match "^[A-Z]{4}(M|W|L)(LAP|WKS|VDI)\d{6}$") {
         $Valid = $true
-        Write-Host "Valid computer name entered: $ComputerName"
+        Write-Log "Valid computer name entered: $ComputerName" "Green"
     } else {
-        Write-Host "Invalid name format. Please try again." -ForegroundColor Red
+        Write-Log "Invalid name format. Please try again." "Red"
         $Valid = $false
     }
 } until ($Valid)
-
-# Check if ComputerName is defined
-if (-not $ComputerName) {
-    Write-Host "Error: Computer name is not defined. Exiting script." -ForegroundColor Red
-    Read-Host "Press Enter to exit"
-    return
-}
 
 # Define valid OS languages
 $validLanguages = @(
@@ -41,30 +65,29 @@ $validLanguages = @(
 do {
     $osLanguage = Read-Host "Please enter the OS language (e.g., en-US, de-DE)"
     if ($validLanguages -contains $osLanguage) {
-        Write-Host "Valid OS Language entered: $osLanguage"
+        Write-Log "Valid OS Language entered: $osLanguage" "Green"
         $Success = $true
     } else {
-        Write-Host "Invalid OS Language entered. Please try again." -ForegroundColor Red
+        Write-Log "Invalid OS Language entered. Please try again." "Red"
         $Success = $false
     }
 } until ($Success)
 
 # Start OSDCloud Deployment
-Write-Host "Starting OSDCloud deployment with language: $osLanguage..."
+Write-Log "Starting OSDCloud deployment with language: $osLanguage..."
 try {
     Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage $osLanguage -OSActivation Volume -ZTI
-    Write-Host "OSDCloud deployment started successfully."
+    Write-Log "OSDCloud deployment started successfully." "Green"
 } catch {
-    Write-Host "Error: OSDCloud deployment failed. Error details: $_" -ForegroundColor Red
-    exit 1
+    Stop-Script "OSDCloud deployment failed. Error details: $_"
 }
 
-Write-Host -ForegroundColor Cyan "Deployment in progress..."
+Write-Log "Deployment in progress..." "Cyan"
 
 # OS Installation Completed
-Write-Host "Operating system installation completed. Adding additional configuration to complete the OSDCloud deployment..."
+Write-Log "Operating system installation completed. Adding additional configuration to complete the OSDCloud deployment..."
 
-# Define the XML content for the Unattend.xml file
+# Define the Unattend XML content
 $UnattendXML = @"
 <unattend xmlns="urn:schemas-microsoft-com:unattend">
     <settings pass="specialize">
@@ -78,16 +101,27 @@ $UnattendXML = @"
 # Define the path to save the Unattend.xml file
 $UnattendPath = "C:\Windows\Panther\Unattend.xml"
 
-# Save the Unattend.xml file silently
+# Save the Unattend.xml file
 try {
     $UnattendXML | Out-File -Encoding utf8 -FilePath $UnattendPath -Force
-    Write-Host "Unattend.xml file saved to $UnattendPath."
+    Write-Log "Unattend.xml file saved to $UnattendPath." "Green"
 } catch {
-    Write-Host "Failed to save Unattend.xml file to $UnattendPath. Error: $_" -ForegroundColor Red
-    exit 1
+    Stop-Script "Failed to save Unattend.xml file to $UnattendPath. Error: $_"
+}
+
+# Define the destination path for the log file
+$DestinationLogPath = "C:\OSDCloud\Logs\"
+
+# Copy log file before restart
+Write-Log "Copying log file to $DestinationLogPath..."
+try {
+    Copy-Item -Path $LogFilePath -Destination $DestinationLogPath -Force
+    Write-Log "Log file successfully copied to $DestinationLogPath." "Green"
+} catch {
+    Stop-Script "Failed to copy log file to $DestinationLogPath. Error: $_"
 }
 
 # Restart the system after OS deployment
-Write-Host "Restarting system in 10 seconds..."
-#Start-Sleep -Seconds 10
-#wpeutil reboot
+Write-Log "Restarting system in 10 seconds..."
+Start-Sleep -Seconds 10
+wpeutil reboot
