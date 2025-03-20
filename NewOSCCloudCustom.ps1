@@ -38,11 +38,14 @@ do {
         Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage $osLanguage -OSActivation Volume -ZTI
         $Success = $true  # Exit loop if successful
     } catch {
-        Write-Host -ForegroundColor Red "OSDCloud deployment failed. Please try again."
+        Write-Host -ForegroundColor Red "Invalid OS Language entered. Please try again."
         $Success = $false  # Keep looping
     }
 
 } until ($Success)
+
+# OS Installation Completed
+Write-Host "OS Installation completed, proceeding to the next step..."
 
 #Define minimal Unattend.xml
 $UnattendXML = @"
