@@ -12,34 +12,42 @@ try {
     Write-Host -ForegroundColor Yellow "Warning: Failed to install or import OSD module. Continuing..."
 }
 
-# Prompt the user for the computer name
-$ComputerName = Read-Host "Enter computer name"
+do {
+    # Prompt the user for the computer name and force uppercase
+    $ComputerName = (Read-Host "Enter computer name").ToUpper()
 
-# Validate Hostname
-if ($ComputerName -match "^[A-Z]{4}(M|W|L)(LAP|WKS|VDI)\d{6}$") {
-    Write-Host "$ComputerName is valid, proceeding with registry update..."
-    try {
-        reg add HKLM\SYSTEM\Setup /v ComputerName /t REG_SZ /d $ComputerName /f
-    } catch {
-        Write-Host -ForegroundColor Red "Failed to update registry key. Exiting..."
-        Exit 1
+    # Validate Hostname (Must be uppercase and match specific format)
+    if ($ComputerName -match "^[A-Z]{4}(M|W|L)(LAP|WKS|VDI)\d{6}$") {
+        Write-Host "$ComputerName is valid. Storing for later use..."
+        $Valid = $true  # Exit loop
+    } else {
+        Write-Host -ForegroundColor Red "Invalid name format. Please try again."
+        $Valid = $false  # Keep looping
     }
-} else {
-    Write-Host -ForegroundColor Red "Invalid name format. Exiting..."
-    Exit 1
-}
 
-# Prompt the user for the OS language
-$osLanguage = Read-Host -Prompt "Please enter the OS language (e.g., en-US, de-DE)"
+} until ($Valid)
 
-# Start OSDCloud Deployment with Custom OS Settings
-Write-Host "Starting OSDCloud deployment..."
-try {
-    Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage $osLanguage -OSActivation Volume -ZTI
-} catch {
-    Write-Host -ForegroundColor Red "OSDCloud deployment failed. Exiting..."
-    Exit 1
-}
+do {
+    # Prompt the user for the OS language
+    $osLanguage = Read-Host -Prompt "Please enter the OS language (e.g., en-US, de-DE)"
+
+    # Start OSDCloud Deployment with Custom OS Settings
+    Write-Host "Starting OSDCloud deployment with language: $osLanguage..."
+    
+    try {
+        Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage $osLanguage -OSActivation Volume -ZTI
+        $Success = $true  # Exit loop if successful
+    } catch {
+        Write-Host -ForegroundColor Red "OSDCloud deployment failed. Please try again."
+        $Success = $false  # Keep looping
+    }
+
+} until ($Success)
+
+# Set the unattended specialize
+Write-Host "Applying computer name: $ComputerName"
+
+Set-OSDCloudUnattendSpecialize -ComputerName $ComputerName
 
 # Wait for OSDCloud to finish
 Write-Host "Waiting for OSDCloud deployment to complete..."
