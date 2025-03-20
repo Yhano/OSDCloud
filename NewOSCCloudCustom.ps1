@@ -1,49 +1,53 @@
+Clear-Host
 Write-Host -ForegroundColor Cyan "Starting OSDCloud Custom Deployment..."
 
 # Ensure OSD Module is Up-to-Date
 Write-Host -ForegroundColor Cyan "Updating OSD Module..."
 try {
-    Install-Module OSD -Force -ErrorAction SilentlyContinue
-    Import-Module OSD -Force -ErrorAction SilentlyContinue
+    Install-Module OSD -Force -ErrorAction SilentlyContinue | Out-Null
+    Import-Module OSD -Force -ErrorAction SilentlyContinue | Out-Null
 } catch {
     Write-Host -ForegroundColor Yellow "Warning: Failed to install or import OSD module. Continuing..."
 }
 
 do {
-    # Prompt the user for the computer name and force uppercase
+    Clear-Host
     $ComputerName = (Read-Host "Enter computer name").ToUpper()
 
-    # Validate Hostname (Must be uppercase and match specific format)
     if ($ComputerName -match "^[A-Z]{4}(M|W|L)(LAP|WKS|VDI)\d{6}$") {
-        $Valid = $true  # Exit loop
+        $Valid = $true  
     } else {
         Write-Host -ForegroundColor Red "Invalid name format. Please try again."
-        $Valid = $false  # Keep looping
+        Start-Sleep -Seconds 2
     }
-
 } until ($Valid)
 
 do {
-    # Prompt the user for the OS language
+    Clear-Host
     $osLanguage = Read-Host -Prompt "Please enter the OS language (e.g., en-US, de-DE)"
 
-    # Start OSDCloud Deployment with Custom OS Settings
     Write-Host "Starting OSDCloud deployment with language: $osLanguage..."
     
-    try {
-        Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage $osLanguage -OSActivation Volume -ZTI
-        $Success = $true  # Exit loop if successful
-    } catch {
-        Write-Host -ForegroundColor Red "Invalid OS Language entered. Please try again."
-        $Success = $false  # Keep looping
+    # Hide all output from Invoke-OSDCloud
+    $job = Start-Job -ScriptBlock {
+        Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage $using:osLanguage -OSActivation Volume -ZTI *> $null
     }
 
+    # Wait for job to complete
+    While ($job.State -eq 'Running') {
+        Start-Sleep -Seconds 5
+    }
+
+    if ($job.State -eq 'Completed') {
+        $Success = $true  
+    } else {
+        Write-Host -ForegroundColor Red "OSDCloud process failed. Please try again."
+        Start-Sleep -Seconds 2
+        $Success = $false  
+    }
 } until ($Success)
 
-# OS Installation Completed
-Write-Host "OS Installation completed, proceeding to the next step..."
-
-#Define minimal Unattend.xml
+# Define and save Unattend.xml silently
 $UnattendXML = @"
 <?xml version="1.0" encoding="utf-8"?>
 <unattend xmlns="urn:schemas-microsoft-com:unattend">
@@ -55,21 +59,9 @@ $UnattendXML = @"
 </unattend>
 "@
 
-# Define the Unattend.xml path
 $UnattendPath = "C:\Windows\Panther\Unattend.xml"
-
-# Check if the file exists
-if (Test-Path $UnattendPath) {
-    Write-Host -ForegroundColor Yellow "Unattend.xml already exists. Overwriting..."
-} else {
-    Write-Host -ForegroundColor Green "Unattend.xml not found. Creating a new one..."
-}
-
-# Save the Unattend.xml file
 $UnattendXML | Out-File -Encoding utf8 -FilePath $UnattendPath -Force
-Write-Host -ForegroundColor Green "Unattend.xml created successfully with Computer Name: $ComputerName"
 
-# Restart After OS Deployment
-Write-Host "OSDCloud deployment has completed. Restarting system..."
-Start-Sleep -Seconds 10
+Write-Host -ForegroundColor Green "Deployment completed. Restarting system..."
+Start-Sleep -Seconds 5
 wpeutil reboot
