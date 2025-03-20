@@ -26,15 +26,16 @@ do {
     $osLanguage = Read-Host -Prompt "Please enter the OS language (e.g., en-US, de-DE)"
     
     try {
-        Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage $osLanguage -OSActivation Volume -ZTI | Out-Null
+        Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage $osLanguage -OSActivation Volume -ZTI *>&1 | Out-Null
         $Success = $true  # Exit loop if successful
-        # Show only deployment progress message
-        Write-Host -ForegroundColor Cyan "Deployment in progress..."
     } catch {
         Write-Host -ForegroundColor Red "Invalid OS Language entered. Please try again."
         $Success = $false  # Keep looping
     }
 } until ($Success)
+
+# Show deployment progress only after successful loop
+Write-Host -ForegroundColor Cyan "Deployment in progress..."
 
 # OS Installation Completed
 Write-Host "Operating system installation completed. Adding additional configuration to complete the OSCloud deployment..."
