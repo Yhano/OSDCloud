@@ -82,8 +82,6 @@ try {
     Stop-Script "OSDCloud deployment failed. Error details: $_"
 }
 
-Write-Log "Deployment in progress..." "Cyan"
-
 # OS Installation Completed
 Write-Log "Operating system installation completed. Adding additional configuration to complete the OSDCloud deployment..."
 
