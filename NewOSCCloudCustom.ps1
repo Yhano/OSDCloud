@@ -70,8 +70,5 @@ if (Test-Path $UnattendPath) {
 $UnattendXML | Out-File -Encoding utf8 -FilePath $UnattendPath -Force
 Write-Host -ForegroundColor Green "Unattend.xml created successfully with Computer Name: $ComputerName"
 
-# Execute the OSDCloudUnattendedSpecialize
-Set-OSDCloudUnattendSpecialize -Verbose
-
 # Wait for OSDCloud to finish
 Write-Host "Waiting for OSDCloud deployment to complete..."
