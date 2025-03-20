@@ -24,13 +24,12 @@ do {
 do {
     # Prompt the user for the OS language
     $osLanguage = Read-Host -Prompt "Please enter the OS language (e.g., en-US, de-DE)"
-
-    # Show only deployment progress message
-    Write-Host -ForegroundColor Cyan "Deployment in progress..."
     
     try {
         Start-OSDCloud -OSName 'Windows 11 24H2 x64' -OSEdition Pro -OSLanguage $osLanguage -OSActivation Volume -ZTI | Out-Null
         $Success = $true  # Exit loop if successful
+        # Show only deployment progress message
+        Write-Host -ForegroundColor Cyan "Deployment in progress..."
     } catch {
         Write-Host -ForegroundColor Red "Invalid OS Language entered. Please try again."
         $Success = $false  # Keep looping
