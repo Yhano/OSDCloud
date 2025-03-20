@@ -44,10 +44,31 @@ do {
 
 } until ($Success)
 
-# Set the unattended specialize
-Write-Host "Applying computer name: $ComputerName"
+#Define minimal Unattend.xml
+$UnattendXML = @"
+<?xml version="1.0" encoding="utf-8"?>
+<unattend xmlns="urn:schemas-microsoft-com:unattend">
+    <settings pass="specialize">
+        <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+            <ComputerName>$ComputerName</ComputerName>
+        </component>
+    </settings>
+</unattend>
+"@
 
-Set-OSDCloudUnattendSpecialize -ComputerName $ComputerName
+# Define the Unattend.xml path
+$UnattendPath = "C:\Windows\Panther\Unattend.xml"
+
+# Check if the file exists
+if (Test-Path $UnattendPath) {
+    Write-Host -ForegroundColor Yellow "Unattend.xml already exists. Overwriting..."
+} else {
+    Write-Host -ForegroundColor Green "Unattend.xml not found. Creating a new one..."
+}
+
+# Save the Unattend.xml file
+$UnattendXML | Out-File -Encoding utf8 -FilePath $UnattendPath -Force
+Write-Host -ForegroundColor Green "Unattend.xml created successfully with Computer Name: $ComputerName"
 
 # Wait for OSDCloud to finish
 Write-Host "Waiting for OSDCloud deployment to complete..."
