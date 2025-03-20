@@ -73,5 +73,7 @@ if (Test-Path $UnattendPath) {
 $UnattendXML | Out-File -Encoding utf8 -FilePath $UnattendPath -Force
 Write-Host -ForegroundColor Green "Unattend.xml created successfully with Computer Name: $ComputerName"
 
-# Wait for OSDCloud to finish
-Write-Host "Waiting for OSDCloud deployment to complete..."
+# Restart After OS Deployment
+Write-Host "OSDCloud deployment has completed. Restarting system..."
+Start-Sleep -Seconds 10
+wpeutil reboot
