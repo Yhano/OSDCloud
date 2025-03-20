@@ -37,7 +37,7 @@ try {
     Import-Module OSD -Force -ErrorAction Stop
     Write-Log "OSD module installed and imported successfully." "Green"
 } catch {
-    Write-Log "Warning: OSD module installation/import failed. Proceeding with deployment..." "Yellow"
+    Write-Log "Warning: The OSD module has failed, but the deployment can still continue. Proceeding with deployment..." "Yellow"
 }
 
 # Prompt for Computer Name
