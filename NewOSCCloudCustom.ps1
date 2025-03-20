@@ -1,13 +1,10 @@
-# Set error handling to stop execution on errors
-$ErrorActionPreference = 'Stop'
-
 Write-Host -ForegroundColor Cyan "Starting OSDCloud Custom Deployment..."
 
 # Ensure OSD Module is Up-to-Date
 Write-Host -ForegroundColor Cyan "Updating OSD Module..."
 try {
-    Install-Module OSD -Force -ErrorAction Stop
-    Import-Module OSD -Force -ErrorAction Stop
+    Install-Module OSD -Force
+    Import-Module OSD -Force
 } catch {
     Write-Host -ForegroundColor Yellow "Warning: Failed to install or import OSD module. Continuing..."
 }
